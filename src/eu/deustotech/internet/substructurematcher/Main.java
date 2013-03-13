@@ -6,7 +6,6 @@ import java.io.File;
 import java.io.FileInputStream;
 import java.io.FileNotFoundException;
 import java.io.IOException;
-import java.io.InputStream;
 import java.io.InputStreamReader;
 import java.net.URI;
 import java.net.URISyntaxException;
@@ -14,45 +13,38 @@ import java.util.HashSet;
 import java.util.Properties;
 import java.util.Set;
 
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+
 import org.semanticweb.owl.align.AlignmentProcess;
+import org.w3c.dom.Document;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
+
 import fr.inrialpes.exmo.align.impl.BasicParameters;
 import fr.inrialpes.exmo.align.impl.method.NameAndPropertyAlignment;
 
 public class Main {
 
+	static String substructureDir = "";
+	static Set<String> alignmentClasses = new HashSet<String>();
+	
 	public static void main(String args[]) {
 		
-		Properties configFile = new Properties();
-		InputStream in;
-		try {
-			in = new FileInputStream("config.properties");
-			configFile.load(in);
-			in.close();
-		} catch (FileNotFoundException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		} catch (IOException e) {
-			// TODO Auto-generated catch block
-			e.printStackTrace();
-		}
+		//TODO: use args[]
+		loadConfigXML("config.xml");
 		
+		Set<URI> ontologySet = searchOntologies(substructureDir);
 		
-		String substructureDir = configFile.getProperty("SUBSTRUCTURE_DIR");
-		
-		//Set<URI> ontologySet = searchOntologies(substructureDir);
-		Set<URI> ontologySet = new HashSet<URI>();
-		try {
-			ontologySet.add(new URI("http://aktors.org/ontology/portal"));
-			ontologySet.add(new URI("http://purl.org/ontology/bibo/"));
-		} catch (URISyntaxException e1) {
-			// TODO Auto-generated catch block
-			e1.printStackTrace();
-		}
 		
 		for (URI onto1 : ontologySet) {
 			for (URI onto2 : ontologySet) {
 				if (onto1 != onto2) {
-					AlignmentProcess aProcess = applyAlignment(onto1, onto2);
+					for (String alignmentClass : alignmentClasses) {
+						AlignmentProcess aProcess = applyAlignment(onto1, onto2, alignmentClass);
+					}
 				}
 			}
 		}
@@ -60,10 +52,42 @@ public class Main {
 	
 	}
 
-	private static AlignmentProcess applyAlignment(URI onto1, URI onto2) {
+	private static void loadConfigXML(String configFile) {
+		try {
+			DocumentBuilderFactory docBuilderFactory = DocumentBuilderFactory.newInstance();
+	        DocumentBuilder docBuilder = docBuilderFactory.newDocumentBuilder();
+	        Document doc = docBuilder.parse(configFile);
+	        
+	        substructureDir = doc.getElementsByTagName("substructureDir").item(0).getTextContent();
+	        
+	        NodeList alignmentNodes = doc.getElementsByTagName("alignment");
+	        for (int i = 0; i < alignmentNodes.getLength(); i++) {
+	        	Node alignmentNode = alignmentNodes.item(i);
+	        	NodeList alignmentChilds = alignmentNode.getChildNodes();
+	        	for (int j = 0; j < alignmentChilds.getLength(); j++) {
+	        		Node child = alignmentChilds.item(j);
+	        		if (child.getNodeName().equals("name")) {
+	        			alignmentClasses.add(child.getTextContent());
+	        		}
+	        	}
+	        }
+	        
+		} catch (ParserConfigurationException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (SAXException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		} catch (IOException e) {
+			// TODO Auto-generated catch block
+			e.printStackTrace();
+		}
+	}
+
+	private static AlignmentProcess applyAlignment(URI onto1, URI onto2, String alignment) {
 		AlignmentProcess aProcess = null;
 		try {
-			Class alignmentClass = Class.forName("fr.inrialpes.exmo.align.impl.method.NameAndPropertyAlignment");
+			Class alignmentClass = Class.forName(alignment);
 			aProcess = (AlignmentProcess) alignmentClass.newInstance();
 			aProcess =  new  NameAndPropertyAlignment();
 			Properties params = new BasicParameters();

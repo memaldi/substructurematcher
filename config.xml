@@ -1,0 +1,7 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<configuration>
+    <substructureDir>/home/mikel/doctorado/subgraphs/subdue</substructureDir>
+    <alignment>
+        <name>fr.inrialpes.exmo.align.impl.method.NameAndPropertyAlignment</name>
+    </alignment>
+</configuration>
