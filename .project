@@ -18,12 +18,12 @@
 		<link>
 			<name>lib/align.jar</name>
 			<type>1</type>
-			<locationURI>PARENT-4-PROJECT_LOC/ontology_matching/alignapi/lib/align.jar</locationURI>
+			<locationURI>PARENT-1-PROJECT_LOC/alignapi/lib/align.jar</locationURI>
 		</link>
 		<link>
 			<name>lib/procalign.jar</name>
 			<type>1</type>
-			<locationURI>PARENT-4-PROJECT_LOC/ontology_matching/alignapi/lib/procalign.jar</locationURI>
+			<locationURI>PARENT-1-PROJECT_LOC/alignapi/lib/procalign.jar</locationURI>
 		</link>
 	</linkedResources>
 </projectDescription>
