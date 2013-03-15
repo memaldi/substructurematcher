@@ -50,11 +50,14 @@ public class Main {
 		
 		logger.info("Processing substructures...");
 		
-		Map<Tuple<String, String, String>, AlignmentProcess> alignmentMap = new HashMap<Tuple<String, String, String>, AlignmentProcess>();
+		Map<Triple<String, String, String>, AlignmentProcess> alignmentMap = new HashMap<Triple<String, String, String>, AlignmentProcess>();
+		Map <Triple<String, String, String>, Double> matchedEntities = new HashMap<Triple<String,String,String>, Double>();
 		
 		//TODO: use args[]
 		loadConfigXML("config.xml");
 		List<LabeledGraph> labeledGraphs = parseGraphs(substructureDir);
+		//Map<Tuple<String, String>, List<Double>> matchingMap = new HashMap<Tuple<String,String>, List<Double>>();
+		
 		for (LabeledGraph graph1 : labeledGraphs) {
 			Set<URI> graph1Ontologies = searchOntologies(graph1);
 			for (LabeledGraph graph2 : labeledGraphs) {
@@ -62,24 +65,30 @@ public class Main {
 					Set<URI> graph2Ontologies = searchOntologies(graph2);
 					for (URI ontology1 : graph1Ontologies) {
 						for (URI ontology2 : graph2Ontologies) {
-							for (String alignmentMethod : alignmentClasses) {
-								AlignmentProcess aProcess = null;
-								if (!alignmentMap.containsKey(new Tuple<String, String, String>(ontology1.toString(), ontology2.toString(), alignmentMethod))) {
-									aProcess = applyAlignment(ontology1, ontology2, alignmentMethod);
-									alignmentMap.put(new Tuple<String, String, String>(ontology1.toString(), ontology2.toString(), alignmentMethod), aProcess);
-								} else {
-									aProcess = alignmentMap.get(new Tuple<String, String, String>(ontology1.toString(), ontology2.toString(), alignmentMethod));					
-								}
-								Set<String> sourceLabels = getGraphLabels(graph1);
-								Set<String> targetLabels = getGraphLabels(graph2);
-								Enumeration<Cell> cells = aProcess.getElements();
-								
-								while (cells.hasMoreElements()) {
-									Cell cell = cells.nextElement();
-									String label1 = cell.getObject1().toString().replace("<", "").replace(">", "");
-									String label2 = cell.getObject2().toString().replace("<", "").replace(">", "");
-									if (sourceLabels.contains(label1) && targetLabels.contains(label2)) {
-										System.out.println(String.format("%s - %s (%s)", label1, label2, cell.getStrength()));
+							if (!ontology1.toString().equals(ontology2.toString())) {
+								for (String alignmentMethod : alignmentClasses) {
+									AlignmentProcess aProcess = null;
+									if (!alignmentMap.containsKey(new Triple<String, String, String>(ontology1.toString(), ontology2.toString(), alignmentMethod))) {
+										aProcess = applyAlignment(ontology1, ontology2, alignmentMethod);
+										alignmentMap.put(new Triple<String, String, String>(ontology1.toString(), ontology2.toString(), alignmentMethod), aProcess);
+									} else {
+										aProcess = alignmentMap.get(new Triple<String, String, String>(ontology1.toString(), ontology2.toString(), alignmentMethod));					
+									}
+									Set<String> sourceLabels = getGraphLabels(graph1);
+									Set<String> targetLabels = getGraphLabels(graph2);
+									Enumeration<Cell> cells = aProcess.getElements();
+									
+									while (cells.hasMoreElements()) {
+										Cell cell = cells.nextElement();
+										String label1 = cell.getObject1().toString().replace("<", "").replace(">", "");
+										String label2 = cell.getObject2().toString().replace("<", "").replace(">", "");
+										if (sourceLabels.contains(label1) && targetLabels.contains(label2)) {
+											if (!matchedEntities.containsKey(new Triple<String, String, String>(label1, label2, alignmentMethod))) {
+												matchedEntities.put(new Triple<String, String, String>(label1, label2, alignmentMethod), cell.getStrength());
+											} 
+											System.out.println(String.format("%s - %s (%s)", label1, label2, cell.getStrength()));
+										}
+										
 									}
 								}
 							}
@@ -88,7 +97,14 @@ public class Main {
 				}
 			}
 		}
-		System.out.println(alignmentMap.size());
+		
+		//DEBUG
+		for (Triple<String, String, String> tuple : matchedEntities.keySet()) {
+			System.out.println(String.format("%s - %s (%s) (%s)", tuple.x, tuple.y, matchedEntities.get(tuple), tuple.z));
+		}
+		
+		//System.out.println(matchingMap);
+		//System.out.println(alignmentMap.size());
 		
 	}
 
